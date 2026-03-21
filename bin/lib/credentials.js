@@ -81,6 +81,37 @@ async function ensureApiKey() {
   console.log("");
 }
 
+async function ensureNgcApiKey() {
+  let key = getCredential("NGC_API_KEY");
+  if (key) {
+    process.env.NGC_API_KEY = key;
+    return;
+  }
+
+  console.log("");
+  console.log("  ┌─────────────────────────────────────────────────────────────────┐");
+  console.log("  │  NGC API Key required for Local NIM                            │");
+  console.log("  │                                                                 │");
+  console.log("  │  1. Go to https://org.ngc.nvidia.com/setup/api-key             │");
+  console.log("  │  2. Generate an NGC API key                                    │");
+  console.log("  │  3. Paste it below                                             │");
+  console.log("  └─────────────────────────────────────────────────────────────────┘");
+  console.log("");
+
+  key = await prompt("  NGC API Key: ");
+
+  if (!key) {
+    console.error("  NGC API key is required for Local NIM.");
+    process.exit(1);
+  }
+
+  saveCredential("NGC_API_KEY", key);
+  process.env.NGC_API_KEY = key;
+  console.log("");
+  console.log("  Key saved to ~/.nemoclaw/credentials.json (mode 600)");
+  console.log("");
+}
+
 function isRepoPrivate(repo) {
   try {
     const json = execSync(`gh api repos/${repo} --jq .private 2>/dev/null`, { encoding: "utf-8" }).trim();
@@ -136,6 +167,7 @@ module.exports = {
   getCredential,
   prompt,
   ensureApiKey,
+  ensureNgcApiKey,
   ensureGithubToken,
   isRepoPrivate,
 };

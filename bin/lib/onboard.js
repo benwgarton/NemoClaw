@@ -28,7 +28,7 @@ const {
   isUnsupportedMacosRuntime,
   shouldPatchCoredns,
 } = require("./platform");
-const { prompt, ensureApiKey, getCredential } = require("./credentials");
+const { prompt, ensureApiKey, ensureNgcApiKey, getCredential } = require("./credentials");
 const registry = require("./registry");
 const nim = require("./nim");
 const policies = require("./policies");
@@ -731,6 +731,18 @@ async function setupNim(sandboxName, gpu) {
 
         console.log(`  Pulling NIM image for ${model}...`);
         nim.pullNimImage(model);
+
+        if (isNonInteractive()) {
+          const ngcApiKey = getCredential("NGC_API_KEY") || process.env.NGC_API_KEY;
+          if (!ngcApiKey) {
+            console.error("  NGC_API_KEY is required for Local NIM in non-interactive mode.");
+            console.error("  Set it via: NGC_API_KEY=... nemoclaw onboard --non-interactive");
+            process.exit(1);
+          }
+          process.env.NGC_API_KEY = ngcApiKey;
+        } else {
+          await ensureNgcApiKey();
+        }
 
         console.log("  Starting NIM container...");
         nimContainer = nim.startNimContainer(sandboxName, model);
